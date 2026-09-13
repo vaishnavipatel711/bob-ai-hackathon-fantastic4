@@ -1,47 +1,37 @@
-# Source Code
+# src/ Layout
 
-Place all your project's source code in this folder.
+This project is a monorepo with two parts:
 
-## Structure Guidelines
-
-Organize your code logically. Here are common patterns — use whatever fits
-your project:
-
-### Web Application
 ```
 src/
-  backend/        ← API server code
-  frontend/       ← UI code
-  shared/         ← Shared utilities/types
+├── backend/          # Data pipeline, risk model, IBM Bob integration, API
+│   ├── data/         # Sensor/weather/incident data generation & ingestion
+│   ├── models/       # Risk scoring & failure prediction logic
+│   ├── bob_integration/  # IBM Bob reasoning layer (explanations + dispatch plans)
+│   ├── api/          # FastAPI app exposing endpoints to the frontend
+│   ├── requirements.txt
+│   └── .env.example
+│
+└── frontend/         # Dashboard UI — risk map, risk panel, dispatch plan view
+    ├── src/
+    │   ├── components/
+    │   ├── App.jsx
+    │   └── main.jsx
+    ├── package.json
+    └── .env.example
 ```
 
-### Data / AI Project
-```
-src/
-  data/           ← Data ingestion / preprocessing
-  models/         ← ML model code
-  api/            ← Serving layer
-  notebooks/      ← Jupyter notebooks (exploration)
-```
+## Team ownership (fill in names)
 
-### CLI / Script-based Tool
-```
-src/
-  cli/            ← CLI entry points
-  lib/            ← Core logic
-  utils/          ← Helpers
-```
+| Area | Owner |
+|---|---|
+| `backend/data/` | [Name] |
+| `backend/models/` | [Name] |
+| `backend/bob_integration/` | [Name] |
+| `backend/api/` | [Name] |
+| `frontend/` | [Name] |
 
-## Important Files to Include
-
-- `requirements.txt` or `package.json` — dependency manifest
-- `.env.example` — template for environment variables (NEVER commit `.env`)
-- Any database migration files
-- Configuration files
-
-## What NOT to Include in src/
-
-- `.env` files with real secrets
-- Large binary files (use Git LFS or link externally)
-- `node_modules/` or `venv/` (these are in `.gitignore`)
-- Build artifacts (`dist/`, `build/`, `__pycache__/`)
+## Run order
+1. Start backend (`backend/README.md`)
+2. Start frontend (`frontend/README.md`)
+3. Full steps live in `docs/setup-guide.md`
