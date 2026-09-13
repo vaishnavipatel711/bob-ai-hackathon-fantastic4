@@ -8,6 +8,11 @@ explanation, and supports live follow-up questions during the demo.
 from bob_integration.bob_client import ask_bob
 
 
+def _safe(value, fallback="unknown"):
+    """Render a possibly-missing field for display without leaking Python's None."""
+    return fallback if value is None else value
+
+
 def explain_risk(asset: dict) -> str:
     """
     Given a scored asset dict (see shape below), return a natural-language
@@ -37,10 +42,10 @@ def explain_risk(asset: dict) -> str:
 
     prompt = (
         f"Asset: {asset_name}\n"
-        f"Risk score: {asset.get('risk_score')}\n"
-        f"Predicted days to failure: {asset.get('predicted_days_to_failure')}\n"
-        f"Customers affected if it fails: {asset.get('customers_affected_estimate')}\n"
-        f"Contributing factors:\n{factor_lines}\n\n"
+        f"Risk score: {_safe(asset.get('risk_score'))}\n"
+        f"Predicted days to failure: {_safe(asset.get('predicted_days_to_failure'))}\n"
+        f"Customers affected if it fails: {_safe(asset.get('customers_affected_estimate'))}\n"
+        f"Contributing factors:\n{factor_lines or '- none reported'}\n\n"
         f"Explain in 2-3 sentences, in plain language for a grid operations manager, "
         f"why this asset is high priority and what could happen if it's not addressed soon."
     )

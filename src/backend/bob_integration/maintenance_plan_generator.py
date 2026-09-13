@@ -6,7 +6,7 @@ at-risk assets, and formats it to match the exact shape the frontend expects.
 """
 
 from bob_integration.bob_client import ask_bob
-from bob_integration.reasoning_engine import explain_risk
+from bob_integration.reasoning_engine import explain_risk, _safe
 
 
 def generate_plan(ranked_assets: list, weather_forecast: dict = None) -> dict:
@@ -31,6 +31,12 @@ def generate_plan(ranked_assets: list, weather_forecast: dict = None) -> dict:
       "summary": "..."
     }
     """
+    if not ranked_assets:
+        return {
+            "plan": [],
+            "summary": "No assets are currently flagged as at-risk. Grid is nominal.",
+        }
+
     plan_items = []
 
     for rank, asset in enumerate(ranked_assets, start=1):
@@ -60,9 +66,9 @@ def _generate_action(asset: dict, rank: int) -> str:
     asset_name = asset.get("location", {}).get("name", asset.get("asset_id", "Unknown asset"))
     prompt = (
         f"Asset: {asset_name}, priority rank {rank}, "
-        f"risk_score={asset.get('risk_score')}, "
-        f"predicted_days_to_failure={asset.get('predicted_days_to_failure')}, "
-        f"customers_affected={asset.get('customers_affected_estimate')}.\n\n"
+        f"risk_score={_safe(asset.get('risk_score'))}, "
+        f"predicted_days_to_failure={_safe(asset.get('predicted_days_to_failure'))}, "
+        f"customers_affected={_safe(asset.get('customers_affected_estimate'))}.\n\n"
         f"Write one concise, concrete crew action (inspection, repair dispatch, "
         f"or crew pre-positioning) an operations manager should take for this asset, "
         f"in one sentence."

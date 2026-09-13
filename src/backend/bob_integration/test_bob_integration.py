@@ -41,6 +41,13 @@ MOCK_ASSETS = [
     },
 ]
 
+# Minimal asset missing most optional fields -- simulates real data from
+# Person 1's pipeline before every field is guaranteed populated.
+SPARSE_ASSET = {
+    "asset_id": "SW-901",
+    "asset_type": "switchgear",
+}
+
 if __name__ == "__main__":
     print("=" * 60)
     print("TEST 1: explain_risk for a single asset")
@@ -58,3 +65,18 @@ if __name__ == "__main__":
     plan = generate_plan(MOCK_ASSETS, weather_forecast={"storm_expected_hours": 72})
     import json
     print(json.dumps(plan, indent=2))
+
+    print("\n" + "=" * 60)
+    print("TEST 4 (edge case): generate_plan with an EMPTY list")
+    print("=" * 60)
+    print(json.dumps(generate_plan([]), indent=2))
+
+    print("\n" + "=" * 60)
+    print("TEST 5 (edge case): explain_risk on a SPARSE asset (missing fields)")
+    print("=" * 60)
+    print(explain_risk(SPARSE_ASSET))
+
+    print("\n" + "=" * 60)
+    print("TEST 6 (edge case): generate_plan with a SPARSE asset in the list")
+    print("=" * 60)
+    print(json.dumps(generate_plan([SPARSE_ASSET]), indent=2))
