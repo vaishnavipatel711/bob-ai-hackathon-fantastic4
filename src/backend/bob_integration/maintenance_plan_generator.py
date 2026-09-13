@@ -5,8 +5,8 @@ Generates a prioritized maintenance & crew pre-positioning plan across all
 at-risk assets, and formats it to match the exact shape the frontend expects.
 """
 
-from bob_integration.bob_client import ask_bob
-from bob_integration.reasoning_engine import explain_risk, _safe
+from .bob_client import ask_bob
+from .reasoning_engine import explain_risk, _safe
 
 
 def generate_plan(ranked_assets: list, weather_forecast: dict = None) -> dict:

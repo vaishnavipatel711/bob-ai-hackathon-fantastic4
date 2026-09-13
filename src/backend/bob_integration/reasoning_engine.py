@@ -5,7 +5,7 @@ Turns a scored asset (from the risk model) into a natural-language
 explanation, and supports live follow-up questions during the demo.
 """
 
-from bob_integration.bob_client import ask_bob
+from .bob_client import ask_bob
 
 
 def _safe(value, fallback="unknown"):
