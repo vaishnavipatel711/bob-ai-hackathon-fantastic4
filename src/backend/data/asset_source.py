@@ -197,10 +197,15 @@ def _score_asset(sensors, weather, incidents):
     if isinstance(result, (tuple, list)) and len(result) == 3:
         return result[0], result[1], result[2]
     # Fall back to attribute access (dataclass / namedtuple / plain object).
+    raw_factors = list(getattr(result, "contributing_factors", []))
+    factors = [
+        f.to_dict() if hasattr(f, "to_dict") else f
+        for f in raw_factors
+    ]
     return (
         getattr(result, "risk_score"),
         getattr(result, "risk_level"),
-        list(getattr(result, "contributing_factors", [])),
+        factors,
     )
 
 
