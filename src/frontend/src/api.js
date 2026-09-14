@@ -58,7 +58,11 @@ export async function getDispatchPlan() {
     if (shouldSimulateFailure()) throw new Error('Simulated network failure (mock mode)');
     return mockDispatchPlan();
   }
-  return request('/plan');
+  const data = await request('/plan');
+  // Real backend returns {"plan": [...], "summary": "..."} — keep this layer
+  // returning a plain array, same shape mockDispatchPlan() already provides,
+  // so DispatchPlan.jsx and App.jsx don't need to know which mode is active.
+  return Array.isArray(data) ? data : data.plan;
 }
 
 export async function askBob(question) {

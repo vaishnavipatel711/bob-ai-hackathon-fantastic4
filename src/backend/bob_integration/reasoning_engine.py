@@ -42,12 +42,14 @@ def explain_risk(asset: dict) -> str:
 
     prompt = (
         f"Asset: {asset_name}\n"
+        f"Risk level: {_safe(asset.get('risk_level'))}\n"
         f"Risk score: {_safe(asset.get('risk_score'))}\n"
         f"Predicted days to failure: {_safe(asset.get('predicted_days_to_failure'))}\n"
         f"Customers affected if it fails: {_safe(asset.get('customers_affected_estimate'))}\n"
         f"Contributing factors:\n{factor_lines or '- none reported'}\n\n"
         f"Explain in 2-3 sentences, in plain language for a grid operations manager, "
-        f"why this asset is high priority and what could happen if it's not addressed soon."
+        f"why this asset has the risk level shown above and what action (if any) is "
+        f"warranted. If risk is low, say so plainly rather than implying urgency."
     )
 
     return ask_bob(prompt, context=asset)

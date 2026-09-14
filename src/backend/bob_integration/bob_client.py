@@ -92,16 +92,28 @@ def _mock_single_asset(asset: dict) -> str:
     asset_name = asset.get("location", {}).get("name", asset.get("asset_id", "This asset"))
     factors = asset.get("contributing_factors", [])
     days = asset.get("predicted_days_to_failure")
+    risk_level = asset.get("risk_level", "unknown")
+
+    priority_phrase = {
+        "high": "flagged high priority",
+        "medium": "flagged for monitoring at medium risk",
+        "low": "currently low risk",
+    }.get(risk_level, "showing mixed indicators")
 
     if factors:
         factor_text = ", ".join(
             f"{f.get('factor', 'unknown factor')} ({f.get('value', 'n/a')})" for f in factors
         )
-        explanation = f"{asset_name} is flagged high priority due to: {factor_text}."
+        explanation = f"{asset_name} is {priority_phrase} based on: {factor_text}."
         if days is not None:
-            explanation += f" Failure is projected within approximately {days} days if unaddressed."
+            if risk_level in ("high", "medium"):
+                explanation += f" Failure is projected within approximately {days} days if unaddressed."
+            else:
+                explanation += f" Estimated {days} days of safe operation remain at current conditions."
         return explanation
 
+    if risk_level == "low":
+        return f"{asset_name} is operating normally with no significant risk indicators."
     return f"{asset_name} requires attention based on current sensor and weather indicators."
 
 

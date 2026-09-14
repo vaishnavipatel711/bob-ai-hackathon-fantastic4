@@ -35,20 +35,50 @@ function radiusFor(customers) {
   return Math.min(Math.max(r, 6), 22);
 }
 
+// Nudge apart any two markers that would otherwise render on top of each
+// other (common with real-world data: several assets in the same city sit
+// very close together relative to the full map's coordinate span). Runs a
+// few passes of simple pairwise repulsion, clamped to stay on the map.
+function separateOverlaps(points, minDist = 7, iterations = 40) {
+  const pts = points.map((p) => ({ ...p }));
+  for (let iter = 0; iter < iterations; iter++) {
+    let moved = false;
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const dx = pts[j].xPct - pts[i].xPct;
+        const dy = pts[j].yPct - pts[i].yPct;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        if (dist < minDist) {
+          moved = true;
+          const push = (minDist - dist) / 2;
+          const ux = dx / dist;
+          const uy = dy / dist;
+          pts[i].xPct -= ux * push;
+          pts[i].yPct -= uy * push;
+          pts[j].xPct += ux * push;
+          pts[j].yPct += uy * push;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+  const clamp = (v) => Math.min(Math.max(v, PADDING_PCT - 4), 100 - PADDING_PCT + 4);
+  return pts.map((p) => ({ ...p, xPct: clamp(p.xPct), yPct: clamp(p.yPct) }));
+}
+
 export default function RiskMap({ assets, selectedAssetId, onSelectAsset }) {
   const [hoveredId, setHoveredId] = useState(null);
 
   const project = useMemo(() => buildProjector(assets), [assets]);
 
-  const positioned = useMemo(
-    () =>
-      assets.map((asset) => ({
-        asset,
-        ...project(asset.location.lat, asset.location.lon),
-        r: radiusFor(asset.customers_affected_estimate),
-      })),
-    [assets, project]
-  );
+  const positioned = useMemo(() => {
+    const raw = assets.map((asset) => ({
+      asset,
+      ...project(asset.location.lat, asset.location.lon),
+      r: radiusFor(asset.customers_affected_estimate),
+    }));
+    return separateOverlaps(raw);
+  }, [assets, project]);
 
   const hovered = positioned.find((p) => p.asset.asset_id === hoveredId);
 
@@ -57,7 +87,7 @@ export default function RiskMap({ assets, selectedAssetId, onSelectAsset }) {
       <svg
         className="riskmap__svg"
         viewBox="0 0 100 100"
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         role="img"
         aria-label="Grid asset risk map"
       >
