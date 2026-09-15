@@ -1,6 +1,8 @@
 # Presentation
 
-Place your slide deck in this folder.
+## Project Presentation
+
+📊 [View / Download Presentation](slides.pdf)
 
 ## Accepted Formats
 
