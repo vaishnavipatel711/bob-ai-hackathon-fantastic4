@@ -1,6 +1,9 @@
 # Screenshots
 
-Place your application screenshots in this folder.
+![01-landing-page.png ](image-4.png)
+![02-main-feature.png](image-5.png)
+![03-output-or-results.png](image-6.png)
+![04-additional-feature.png](image-7.png)
 
 ## Naming Convention
 
