@@ -1,16 +1,16 @@
 team:
-  name: "Fantastic 4"
+  name: "Fantastic4"
   track: "AI"
   lead:
     name: "Vaishnavi Patel"
-    email: "vaishnavipatel711@gmail.com"
+    email: "24DCS090@charusat.edu.in"
   members:
-    - name: "Vaishnavi Patel"
-      email: "vaishnavipatel711@gmail.com"
-    - name: "Team Member 2"
-      email: ""
-    - name: "Team Member 3"
-      email: ""
+    - name: "Vyoma Patel"
+      email: "24DCS094@charusat.edu.in"
+    - name: "Ved Patel"
+      email: "24IT080@charusat.edu.in"
+    - name: "Sujal Patel"
+      email: "24IT079@charusat.edu.in"
 
 submission:
   title: "Power Outage Prediction & Grid Equipment Failure Advisor"

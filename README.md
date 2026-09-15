@@ -14,7 +14,10 @@ equipment failures before they cause blackouts — powered by IBM Bob (watsonx.a
 |---|---|
 | **Team Name** | Fantastic 4 |
 | **Track** | AI |
-| **Team Lead** | Vaishnavi Patel — vaishnavipatel711@gmail.com |
+| **Team Lead** | Vaishnavi Patel — 24DCS090@charusat.edu.in |
+| **Members** | Vyoma Patel — 24DCS094@charusat.edu.in |
+| | Ved Patel — 24IT080@charusat.edu.in |
+| | Sujal Patel — 24IT079@charusat.edu.in |
 
 ---
 
@@ -32,7 +35,7 @@ data and weather forecasts are never combined in time to act.
 
 We built an IBM Bob-powered real-time advisor that:
 
-1. **Predicts** which grid assets are most likely to fail using a 6-factor explainable risk model
+1. **Predicts** which grid assets are most likely to fail using a 5-component explainable risk model
 2. **Ranks** assets by grid impact severity (customers × criticality × failure probability)
 3. **Generates** a prioritised maintenance and crew pre-positioning dispatch plan via IBM Bob
 
@@ -43,9 +46,10 @@ each asset's risk in plain language, and answers free-text questions from contro
 
 ## Key Features
 
-- **Multi-signal risk scoring** — 6 weighted factors: oil quality (0.25), vibration (0.20),
-  temperature (0.15), load factor (0.15), weather forecast (0.15), incident history (0.10).
-  All weights are named constants that sum to 1.0, enforced by an assertion at import time.
+- **Multi-signal risk scoring** — 5 weighted components per asset: sensor risk (partial
+  discharge, temperature, vibration, oil quality), load risk, age/maintenance risk, historical
+  failure risk, and weather risk. Weights vary by asset type (e.g. transformer sensor weight
+  0.35 vs. feeder 0.30); every sub-score is fully traceable — not a black-box model.
 
 - **IBM Bob dispatch planning** — `/plan` sends the top-N at-risk assets plus live weather
   to IBM Bob, which returns a structured JSON dispatch plan with crew type, dispatch location,
@@ -150,7 +154,7 @@ specific actions, crew types, and response ETAs for each flagged asset.
 
 | Artifact | Link |
 |---|---|
-| Demo Video | See `demo/demo-video-link.txt` |
-| Live Demo | See `demo/live-demo-url.txt` |
-| Screenshots | See `demo/screenshots/` |
-| Presentation | See `presentation/` |
+| Demo Video | `demo/demo-video-link.txt` |
+| Live Demo | NOT DEPLOYED — run locally using `docs/setup-guide.md` |
+| Screenshots | `demo/screenshots/` |
+| Presentation | `presentation/` |
