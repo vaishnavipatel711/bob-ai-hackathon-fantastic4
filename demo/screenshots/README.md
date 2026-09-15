@@ -1,10 +1,16 @@
 # Screenshots
 
-![01-landing-page.png ](image-4.png)
-![02-main-feature.png](image-5.png)
-![03-output-or-results.png](image-6.png)
-![04-additional-feature.png](image-7.png)
+### 1. Landing Page
+![Landing Page](image-4.png)
 
+### 2. Main Feature
+![Main Feature](image-5.png)
+
+### 3. Output / Results
+![Output or Results](image-6.png)
+
+### 4. Additional Feature
+![Additional Feature](image-7.png)
 ## Naming Convention
 
 Name your screenshots sequentially so they appear in logical order:
