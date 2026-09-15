@@ -3,14 +3,14 @@ team:
   track: "AI"
   lead:
     name: "Vaishnavi Patel"
-    email: "24DCS090@charusat.edu.in"
+    email: "24dcs090@charusat.edu.in"
   members:
     - name: "Vyoma Patel"
-      email: "24DCS094@charusat.edu.in"
+      email: "24dcs094@charusat.edu.in"
     - name: "Ved Patel"
-      email: "24IT080@charusat.edu.in"
+      email: "24it080@charusat.edu.in"
     - name: "Sujal Patel"
-      email: "24IT079@charusat.edu.in"
+      email: "24it079@charusat.edu.in"
 
 submission:
   title: "Power Outage Prediction & Grid Equipment Failure Advisor"
@@ -69,7 +69,7 @@ artifacts:
   source_code: "src/"
   setup_guide: "docs/setup-guide.md"
   architecture_doc: "docs/architecture.md"
-  demo_video: "demo/demo-video-link.txt"
-  live_demo: "demo/live-demo-url.txt"
-  screenshots: "demo/screenshots/"
+  demo_video: "https://www.youtube.com/watch?v=3g0X1k5J6xM"
+  live_demo: "https://fantastic4-grid-advisor.vercel.app/"
+  screenshots: "screenshots/"
   presentation: "presentation/"

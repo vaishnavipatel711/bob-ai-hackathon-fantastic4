@@ -154,7 +154,7 @@ specific actions, crew types, and response ETAs for each flagged asset.
 
 | Artifact | Link |
 |---|---|
-| Demo Video | `demo/demo-video-link.txt` |
-| Live Demo | NOT DEPLOYED — run locally using `docs/setup-guide.md` |
+| Demo Video | `https://youtu.be/nNX27mQarME` |
+| Live Demo |`https://bob-ai-hackathon-fantastic4.vercel.app/`|
 | Screenshots | `demo/screenshots/` |
 | Presentation | `presentation/` |
