@@ -294,9 +294,17 @@ button:focus-visible,
   background: var(--hairline);
 }
 
+/* Side-cell panels shrink-wrap their content instead of stretching to fill */
 .dashboard__side-cell .panel {
   background: var(--bg-1);
-  min-height: 200px;
+  height: auto;
+  flex-shrink: 0;
+}
+
+/* Body inside side-cell panels must not flex-grow — it would create empty space */
+.dashboard__side-cell .panel .panel__body {
+  flex: none;
+  overflow: visible;
 }
 
 .app__full-cell {
