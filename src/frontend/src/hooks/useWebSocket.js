@@ -46,7 +46,8 @@ function buildMockSnapshot(seed) {
 
   const districtMap = {};
   assets.forEach((a) => {
-    const d = a.location.district;
+    // Support both nested mock shape (location.district) and flat backend shape (district)
+    const d = a.location?.district ?? a.district;
     if (!d) return;
     if (!districtMap[d]) districtMap[d] = { district: d, count: 0, max_risk: 0 };
     districtMap[d].count += 1;

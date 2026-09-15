@@ -63,10 +63,15 @@ export async function getDispatchPlan() {
   if (USE_MOCK) {
     await delay(600);
     if (shouldSimulateFailure()) throw new Error('Simulated network failure (mock mode)');
-    return mockDispatchPlan();
+    // Wrap mock array in the same {summary, plan} shape the backend returns
+    const planSteps = mockDispatchPlan();
+    return {
+      summary: `${planSteps.length} assets prioritised for maintenance and crew dispatch. Crews should respond in priority order to minimise customer impact.`,
+      plan: planSteps,
+    };
   }
-  const data = await request('/plan');
-  return Array.isArray(data) ? data : data.plan;
+  // Backend returns { summary: string, plan: [...] }
+  return request('/plan');
 }
 
 export async function askBob(question) {
@@ -236,7 +241,9 @@ export async function getCrewRecommendations() {
       },
     ];
   }
-  return request('/api/crew/recommendations');
+  const data = await request('/api/crew/recommendations');
+  // Backend wraps the array: { recommendations: [...], data_label, timestamp }
+  return Array.isArray(data) ? data : (data.recommendations ?? data);
 }
 
 // GET /api/weather — latest weather conditions

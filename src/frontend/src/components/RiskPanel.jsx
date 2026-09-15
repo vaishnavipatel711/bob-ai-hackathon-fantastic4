@@ -25,7 +25,13 @@ export default function RiskPanel({ assets, selectedAssetId, onSelectAsset }) {
   const [explainLoadingId, setExplainLoadingId] = useState(null);
   const [explainError, setExplainError] = useState(null);
 
-  const sorted = [...assets].sort((a, b) => b.risk_score - a.risk_score);
+  // Normalise risk score to 0-1 and sort descending — supports both
+  // mock shape (risk_score 0-1) and backend shape (overall_risk_score 0-100)
+  const normalised = assets.map((a) => {
+    const raw = a.risk_score ?? a.overall_risk_score ?? 0;
+    return { ...a, _norm_score: raw > 1 ? raw / 100 : raw };
+  });
+  const sorted = [...normalised].sort((a, b) => b._norm_score - a._norm_score);
 
   async function toggleRow(assetId) {
     if (expandedId === assetId) {
@@ -76,19 +82,21 @@ export default function RiskPanel({ assets, selectedAssetId, onSelectAsset }) {
                 <span className="riskpanel__rank">{String(idx + 1).padStart(2, '0')}</span>
 
                 <span className="riskpanel__asset">
-                  <span className="riskpanel__asset-name">{asset.location.name}</span>
+                  <span className="riskpanel__asset-name">
+                    {asset.location?.name ?? asset.asset_name ?? asset.asset_id}
+                  </span>
                   <span className="riskpanel__asset-meta">
                     {asset.asset_id} · {asset.asset_type}
                   </span>
                 </span>
 
                 <span className="riskpanel__score-col">
-                  <span className="riskpanel__score-num" style={{ color }}>{asset.risk_score.toFixed(2)}</span>
+                  <span className="riskpanel__score-num" style={{ color }}>{asset._norm_score.toFixed(2)}</span>
                   <span className="riskpanel__stat-label" style={{ color }}>{asset.risk_level}</span>
                   <span className="riskpanel__score-bar">
                     <span
                       className="riskpanel__score-fill"
-                      style={{ width: `${asset.risk_score * 100}%`, background: color }}
+                      style={{ width: `${asset._norm_score * 100}%`, background: color }}
                     />
                   </span>
                 </span>

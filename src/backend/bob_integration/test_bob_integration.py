@@ -1,16 +1,26 @@
 """
-Owner: Person 3
+Bob integration tests — importable by pytest and runnable as a script.
 
-Quick manual test — run this to verify bob_integration works end-to-end
-before anyone else's real code is plugged in.
+Run as pytest (from repo root):
+    pytest src/backend/bob_integration/test_bob_integration.py -v
 
-Run from src/backend/:
+Run as a script (from src/backend/):
     python -m bob_integration.test_bob_integration
 """
 
-from bob_integration.reasoning_engine import explain_risk, compare_assets
-from bob_integration.maintenance_plan_generator import generate_plan
+import json
+import sys
+import os
 
+# Allow direct script invocation from src/backend/
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+
+from src.backend.bob_integration.reasoning_engine import explain_risk, compare_assets
+from src.backend.bob_integration.maintenance_plan_generator import generate_plan
+
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
 MOCK_ASSETS = [
     {
         "asset_id": "TX-104",
@@ -41,42 +51,70 @@ MOCK_ASSETS = [
     },
 ]
 
-# Minimal asset missing most optional fields -- simulates real data from
-# Person 1's pipeline before every field is guaranteed populated.
+# Minimal asset missing most optional fields — simulates real data from
+# a pipeline before every field is guaranteed populated.
 SPARSE_ASSET = {
     "asset_id": "SW-901",
     "asset_type": "switchgear",
 }
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print("TEST 1: explain_risk for a single asset")
-    print("=" * 60)
-    print(explain_risk(MOCK_ASSETS[0]))
 
-    print("\n" + "=" * 60)
-    print("TEST 2: compare_assets")
-    print("=" * 60)
-    print(compare_assets(MOCK_ASSETS[0], MOCK_ASSETS[1]))
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
 
-    print("\n" + "=" * 60)
-    print("TEST 3: generate_plan for full ranked list")
-    print("=" * 60)
+def test_explain_risk_returns_string():
+    result = explain_risk(MOCK_ASSETS[0])
+    assert isinstance(result, str)
+    assert len(result) > 10, "explanation should be non-trivial"
+
+
+def test_explain_risk_sparse_asset():
+    """explain_risk must not raise for a minimally-populated asset."""
+    result = explain_risk(SPARSE_ASSET)
+    assert isinstance(result, str)
+
+
+def test_compare_assets_returns_string():
+    result = compare_assets(MOCK_ASSETS[0], MOCK_ASSETS[1])
+    assert isinstance(result, str)
+    assert len(result) > 10
+
+
+def test_generate_plan_structure():
     plan = generate_plan(MOCK_ASSETS, weather_forecast={"storm_expected_hours": 72})
-    import json
-    print(json.dumps(plan, indent=2))
+    assert isinstance(plan, dict), "generate_plan must return a dict"
+    assert "summary" in plan
+    assert "plan" in plan
+    assert isinstance(plan["plan"], list)
+    assert len(plan["plan"]) > 0
 
-    print("\n" + "=" * 60)
-    print("TEST 4 (edge case): generate_plan with an EMPTY list")
-    print("=" * 60)
-    print(json.dumps(generate_plan([]), indent=2))
 
-    print("\n" + "=" * 60)
-    print("TEST 5 (edge case): explain_risk on a SPARSE asset (missing fields)")
-    print("=" * 60)
-    print(explain_risk(SPARSE_ASSET))
+def test_generate_plan_asset_ids_are_valid():
+    plan = generate_plan(MOCK_ASSETS)
+    valid_ids = {a["asset_id"] for a in MOCK_ASSETS}
+    for step in plan["plan"]:
+        assert step["asset_id"] in valid_ids, (
+            f"Plan contains invented asset_id: {step['asset_id']}"
+        )
 
-    print("\n" + "=" * 60)
-    print("TEST 6 (edge case): generate_plan with a SPARSE asset in the list")
-    print("=" * 60)
-    print(json.dumps(generate_plan([SPARSE_ASSET]), indent=2))
+
+def test_generate_plan_empty_list():
+    plan = generate_plan([])
+    assert plan["plan"] == []
+    assert isinstance(plan["summary"], str)
+
+
+def test_generate_plan_sparse_asset():
+    """generate_plan must not raise for an asset missing optional fields."""
+    plan = generate_plan([SPARSE_ASSET])
+    assert isinstance(plan, dict)
+    assert "plan" in plan
+
+
+# ---------------------------------------------------------------------------
+# Script entry point
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    import pytest
+    sys.exit(pytest.main([__file__, "-v"]))

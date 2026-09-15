@@ -25,7 +25,7 @@ function CrewCard({ crew }) {
         <div>
           <span style={{ fontWeight: 700, fontSize: 13, color: '#f1f5f9' }}>Crew {crew.crew_id}</span>
           <span style={{ fontSize: 12, color: '#64748b', marginLeft: 8 }}>
-            {crew.current_location} → <strong style={{ color: '#e2e8f0' }}>{crew.recommended_location}</strong>
+            {crew.current_location} → <strong style={{ color: '#e2e8f0' }}>{crew.recommended_position ?? crew.recommended_location}</strong>
           </span>
         </div>
         <span style={{
@@ -35,12 +35,12 @@ function CrewCard({ crew }) {
           {uc.label}
         </span>
       </div>
-      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: crew.assets_covered?.length ? 6 : 0 }}>
+      <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: (crew.priority_assets ?? crew.assets_covered)?.length ? 6 : 0 }}>
         {crew.reason}
       </div>
-      {crew.assets_covered?.length > 0 && (
+      {(crew.priority_assets ?? crew.assets_covered)?.length > 0 && (
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-          {crew.assets_covered.map((id) => (
+          {(crew.priority_assets ?? crew.assets_covered).map((id) => (
             <span key={id} style={{
               background: '#0f172a', color: '#64748b', border: '1px solid #334155',
               borderRadius: 3, padding: '1px 6px', fontSize: 10,

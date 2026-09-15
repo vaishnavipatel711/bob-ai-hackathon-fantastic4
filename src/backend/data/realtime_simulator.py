@@ -120,6 +120,7 @@ class RealtimeSimulator:
         self._history: dict[str, deque] = {}
 
         # Anomaly state per asset
+        self._anomaly_start_time: dict[str, float] = {}   # wall-clock start
         self._anomaly_end_time: dict[str, float] = {}     # 0 = no active anomaly
         self._anomaly_type: dict[str, str] = {}
         self._anomaly_cooldown_end: dict[str, float] = {}
@@ -142,6 +143,7 @@ class RealtimeSimulator:
             aid = asset["asset_id"]
             self._baselines[aid] = _asset_baseline(asset)
             self._history[aid] = deque(maxlen=MAX_HISTORY_SAMPLES)
+            self._anomaly_start_time[aid] = 0.0
             self._anomaly_end_time[aid] = 0.0
             self._anomaly_type[aid] = ""
             self._anomaly_cooldown_end[aid] = 0.0
@@ -196,20 +198,21 @@ class RealtimeSimulator:
                 self._degrading_phase_start[aid] = now
                 self._degrading_phase[aid] = 0.0
 
-        # --- Active anomaly multiplier ---
+        # --- Active anomaly multiplier (triangle wave: ramp up then ramp down) ---
         anomaly_active = False
         anomaly_type = ""
         anomaly_factor = 0.0
         if self._anomaly_end_time[aid] > now:
             anomaly_active = True
             anomaly_type = self._anomaly_type[aid]
-            # Smooth ramp-up / ramp-down: peak at mid-point
-            total = self._anomaly_end_time[aid] - (
-                self._anomaly_end_time[aid] - ANOMALY_MIN_DURATION_S
-            )
-            elapsed_anomaly = now - (self._anomaly_end_time[aid] - total)
-            # Just use a fixed peak factor regardless of position for simplicity
-            anomaly_factor = 1.0
+            start = self._anomaly_start_time[aid]
+            end = self._anomaly_end_time[aid]
+            duration = max(1.0, end - start)
+            elapsed = now - start
+            frac = min(1.0, max(0.0, elapsed / duration))
+            # Triangle: peak (factor=1.0) at the mid-point of the anomaly window
+            anomaly_factor = 1.0 - abs(frac - 0.5) * 2
+            anomaly_factor = max(0.1, anomaly_factor)   # keep a minimum signal visible
 
         # --- Base sensor values with natural variation ---
         load_cycle = 0.12 * math.sin(phase) + 0.04 * math.sin(fast_phase * 3)
@@ -307,6 +310,7 @@ class RealtimeSimulator:
         atype = self._rng.choice(["overheating", "high_vibration", "pd_spike", "overload"])
         duration = self._rng.uniform(ANOMALY_MIN_DURATION_S, ANOMALY_MAX_DURATION_S)
 
+        self._anomaly_start_time[target] = now
         self._anomaly_end_time[target] = now + duration
         self._anomaly_type[target] = atype
         self._anomaly_cooldown_end[target] = now + duration + ANOMALY_COOLDOWN_S

@@ -235,13 +235,15 @@ def compute_asset_risk(
 
     # Weighted combination — weights vary by asset type
     if is_tx:
+        # Weights: sensor 0.35, load 0.20, age/maintenance 0.25, history 0.10, weather 0.10 = 1.00
+        # age_score already blends age and last_maintenance_days_ago (50/50 in _age_risk),
+        # so we give it a higher combined weight (0.25) for transformer-class assets.
         overall = (
             0.35 * sensor_score
             + 0.20 * load_score
-            + 0.15 * age_score
+            + 0.25 * age_score
             + 0.10 * hist_score
             + 0.10 * wx_score
-            + 0.10 * age_score   # maintenance overdue sub-component already in age_score
         )
     else:
         overall = (
@@ -258,8 +260,25 @@ def compute_asset_risk(
     fail_prob = round(min(100.0, overall * 0.7 + (overall / 100) ** 2 * 30), 2)
 
     customers = asset.get("customers_served", 1000)
+    atype = asset.get("asset_type", "transformer")
     criticality = asset.get("criticality", 0.5)
-    grid_impact = round(fail_prob * customers * criticality / 1000, 2)  # normalized
+
+    # grid_impact_score: normalised 0–1 composite using the same weights as
+    # impact_ranking.py (risk 45%, customers 35%, criticality 20%) so that
+    # /api/maintenance/priorities and /plan produce consistent orderings.
+    # ASSET_CRITICALITY table mirrors impact_ranking.py; criticality field
+    # from asset metadata is used as the criticality component directly.
+    _CRIT_PRIOR = {
+        "substation": 1.0, "transformer": 0.8, "switchgear": 0.7,
+        "feeder": 0.6, "line": 0.5, "pole": 0.3,
+    }
+    crit_component = _CRIT_PRIOR.get(atype, criticality)
+    grid_impact = round(
+        0.45 * (fail_prob / 100)
+        + 0.35 * min(1.0, customers / 10000)
+        + 0.20 * crit_component,
+        4,
+    )
 
     action, urgency = _recommendation(rl, sensor, asset)
 

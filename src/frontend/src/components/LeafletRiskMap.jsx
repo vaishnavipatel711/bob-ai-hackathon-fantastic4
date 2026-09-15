@@ -61,13 +61,15 @@ function MapCenterController({ center, zoom }) {
 }
 
 // ── Transmission lines between major substation pairs ────────────────────────
+// All IDs must exist in the 25-asset live universe (gujarat_assets.py).
 const TRANSMISSION_PAIRS = [
-  ['TX-088', 'TX-104'], // Surat ↔ Anand
-  ['TX-104', 'TX-330'], // Anand ↔ Rajkot
-  ['TX-330', 'TX-810'], // Rajkot ↔ Jamnagar
-  ['TX-720', 'TX-019'], // Gandhinagar ↔ Ahmedabad North
-  ['TX-019', 'FD-221'], // Ahmedabad North ↔ Naranpura
-  ['TX-501', 'TX-330'], // Junagadh ↔ Rajkot
+  ['TX-004', 'TX-006'], // Surat ↔ Anand
+  ['TX-006', 'TX-002'], // Anand ↔ Rajkot
+  ['TX-002', 'TX-008'], // Rajkot ↔ Jamnagar
+  ['SS-004', 'SS-002'], // Gandhinagar ↔ Ahmedabad North
+  ['SS-002', 'TX-003'], // Ahmedabad North ↔ Naroda Industrial
+  ['FD-003', 'TX-002'], // Junagadh ↔ Rajkot
+  ['SS-003', 'TX-007'], // Vadodara ↔ Bharuch Dahej
 ];
 
 // ── CSS for pulsing critical ring ─────────────────────────────────────────────

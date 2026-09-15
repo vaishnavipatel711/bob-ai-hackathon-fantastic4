@@ -11,6 +11,7 @@ Then visit http://localhost:8000/docs for interactive Swagger UI.
 """
 
 import asyncio
+import functools
 import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -76,10 +77,14 @@ _ws_clients: list[WebSocket] = []
 _ws_lock = asyncio.Lock()
 
 
-async def _build_live_payload() -> dict:
-    """Build the full live-update JSON payload."""
+def _build_payload_sync() -> dict:
+    """
+    Pure synchronous payload builder — runs in a thread-pool executor so the
+    CPU-bound compute_all_risks loop never blocks the asyncio event loop.
+    """
     sensors = sensor_sim.get_current_readings()
     weather = wx_sim.get_all_weather()
+    now = datetime.now(tz=timezone.utc)
 
     asset_risks = compute_all_risks(GUJARAT_ASSETS, sensors, weather)
     district_risks = compute_district_risks(asset_risks, GUJARAT_ASSETS, weather)
@@ -87,6 +92,28 @@ async def _build_live_payload() -> dict:
     # Run alert engine with latest data
     alert_engine.process_update(asset_risks, sensors, weather, GUJARAT_ASSETS)
     alerts = alert_engine.get_active_alerts()
+
+    # Measure real sensor staleness from the most recent snapshot timestamp
+    sample_sensor = next(iter(sensors.values()), None)
+    if sample_sensor:
+        try:
+            sensor_ts = datetime.fromisoformat(sample_sensor.timestamp)
+            sensor_age_s = round((now - sensor_ts).total_seconds(), 1)
+        except Exception:
+            sensor_age_s = 5.0
+    else:
+        sensor_age_s = 5.0
+
+    # Measure real weather staleness
+    sample_wx = next(iter(weather.values()), None)
+    if sample_wx:
+        try:
+            wx_ts = datetime.fromisoformat(sample_wx.timestamp)
+            weather_age_s = round((now - wx_ts).total_seconds(), 1)
+        except Exception:
+            weather_age_s = 30.0
+    else:
+        weather_age_s = 30.0
 
     # Build assets array with current risk
     assets_payload = []
@@ -124,12 +151,9 @@ async def _build_live_payload() -> dict:
             })
         assets_payload.append(row)
 
-    # Sensor update age: time since last simulator tick (should be ≤5s)
-    now_ts = datetime.now(tz=timezone.utc).isoformat()
-
     return {
         "type": "live_update",
-        "timestamp": now_ts,
+        "timestamp": now.isoformat(),
         "data_label": "DEMO DATA — Simulated real-time sensor stream",
         "assets": assets_payload,
         "alerts": [a.to_dict() for a in alerts[:20]],
@@ -138,11 +162,20 @@ async def _build_live_payload() -> dict:
         "system": {
             "mode": "DEMO",
             "connected_assets": len(GUJARAT_ASSETS),
-            "sensor_update_age_s": 5,
-            "weather_update_age_s": 30,
-            "prediction_age_s": 5,
+            "sensor_update_age_s": sensor_age_s,
+            "weather_update_age_s": weather_age_s,
+            "prediction_age_s": sensor_age_s,  # prediction is always as fresh as sensors
         },
     }
+
+
+async def _build_live_payload() -> dict:
+    """
+    Async wrapper: runs the CPU-bound payload builder in the default
+    thread-pool executor so the asyncio event loop is never blocked.
+    """
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _build_payload_sync)
 
 
 @app.websocket("/ws/live")

@@ -1,9 +1,26 @@
 """
 asset_source.py
 
-The single source of truth for "asset" data consumed by the API layer
-(src/backend/api/routes.py) and, downstream, the frontend + Bob
-integration.
+Asset data for the LEGACY REST pipeline (GET /assets, GET /assets/{id},
+GET /assets/{id}/explain, GET /plan, POST /ask).
+
+NOTE ON TWO ASSET UNIVERSES
+----------------------------
+This module serves the legacy endpoints only (18 synthetic Gujarat assets,
+generated once at import time using risk_scoring_model.py).
+
+The real-time pipeline (GET /api/assets, WebSocket /ws/live, crew planner,
+alert engine, district risks) uses the separate ``gujarat_assets.py`` module
+which defines 25 assets with per-district live sensor + weather simulation.
+
+Both universes are intentional:
+  - Legacy pipeline: static snapshot, suitable for Bob explain / plan calls
+    without a live sensor stream dependency.
+  - Real-time pipeline: live 5-second updates via realtime_simulator.py and
+    weather_simulator.py — used by the dashboard and WebSocket clients.
+
+If you want a unified view, call the real-time /api/* endpoints which always
+reflect the live 25-asset universe.
 
 Responsibilities:
 1. Generate a fixed set of ~15-20 synthetic grid assets across Gujarat,

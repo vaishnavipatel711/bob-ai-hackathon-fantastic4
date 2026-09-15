@@ -27,16 +27,24 @@ export default function AlertPanel({ alerts = [], collapsed, onToggle }) {
     return () => clearInterval(id);
   }, []);
 
-  // Sync incoming alerts; auto-dismiss INFO after 60 s
+  // Sync incoming alerts; auto-dismiss INFO after 60 s.
+  // Backend serialises Alert.alert_id (snake_case); mock data uses .id.
+  // _aid() normalises both so keying and deduplication work in both modes.
+  const _aid = (a) => a.alert_id ?? a.id ?? '';
+
   useEffect(() => {
     setVisible((prev) => {
-      const prevMap = Object.fromEntries(prev.map((a) => [a.id, a]));
-      const merged = alerts.map((a) => ({
-        ...a,
-        _new: !seenIds.current.has(a.id),
-        _entered: prevMap[a.id]?._entered ?? Date.now(),
-      }));
-      merged.forEach((a) => seenIds.current.add(a.id));
+      const prevMap = Object.fromEntries(prev.map((a) => [_aid(a), a]));
+      const merged = alerts.map((a) => {
+        const key = _aid(a);
+        return {
+          ...a,
+          _key: key,
+          _new: !seenIds.current.has(key),
+          _entered: prevMap[key]?._entered ?? Date.now(),
+        };
+      });
+      merged.forEach((a) => seenIds.current.add(a._key));
       // Auto-dismiss INFO alerts older than 60 s
       return merged.filter((a) => {
         if (a.severity === 'info' && Date.now() - a._entered > 60000) return false;
@@ -86,7 +94,7 @@ export default function AlertPanel({ alerts = [], collapsed, onToggle }) {
               const c = cfg(alert.severity);
               return (
                 <div
-                  key={alert.id}
+                  key={alert._key}
                   style={{
                     display: 'flex', gap: 10, alignItems: 'flex-start',
                     padding: '8px 16px',

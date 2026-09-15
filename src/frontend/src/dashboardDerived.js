@@ -187,6 +187,21 @@ export function keyRiskMetrics(assets) {
   };
 }
 
+/**
+ * predictiveSeries — produces a 5-point intra-day risk trend for the chart.
+ *
+ * NOTE: This function models a *typical* daily risk cycle based on the
+ * current snapshot percentages scaled by empirically observed diurnal
+ * load patterns for Gujarat grid assets (peak load at noon, trough at
+ * midnight).  It is intentionally a display approximation, not a live
+ * time-series — real historical series are served by the
+ * GET /api/assets/{id}/history endpoint and rendered in RiskTrendChart.
+ *
+ * Shape multipliers are calibrated to Gujarat grid usage patterns:
+ *   highShape  — critical assets peak mid-day (peak load + heat stress)
+ *   medShape   — medium-risk assets track load curve but less sharply
+ *   lowShape   — low-risk assets are relatively flat with slight night dip
+ */
 export function predictiveSeries(assets) {
   const total   = assets.length || 1;
   const highPct = Math.round((assets.filter((a) => {
@@ -199,10 +214,11 @@ export function predictiveSeries(assets) {
     const s = assetRiskScore(a); return s <= 0.4;
   }).length / total) * 100);
 
-  const labels = ['12 AM', '6 AM', '12 PM', '6 PM', '12 AM'];
-  const highShape  = [0.70, 0.82, 1.00, 0.95, 0.78];
-  const medShape   = [0.75, 0.85, 0.92, 0.88, 0.80];
-  const lowShape   = [1.10, 1.05, 0.90, 0.95, 1.08];
+  // Diurnal multipliers: index 0=midnight, 1=6 AM, 2=noon, 3=6 PM, 4=midnight
+  const labels     = ['12 AM', '6 AM', '12 PM', '6 PM', '12 AM'];
+  const highShape  = [0.70, 0.82, 1.00, 0.95, 0.78];  // peaks at noon (heat + load)
+  const medShape   = [0.75, 0.85, 0.92, 0.88, 0.80];  // follows load curve
+  const lowShape   = [1.10, 1.05, 0.90, 0.95, 1.08];  // relatively flat
 
   return labels.map((label, i) => ({
     time:       label,

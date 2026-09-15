@@ -115,6 +115,9 @@ export default function App() {
   const { data: wsData, connected, reconnecting, lastUpdate, isMock } = useWebSocket();
   const liveAssets = wsData?.assets ?? null;
   const liveAlerts = wsData?.alerts ?? [];
+  // Real update ages from the backend system block (null in mock mode — LiveStatusBar falls back gracefully)
+  const sensorAgeS  = wsData?.system?.sensor_update_age_s  ?? null;
+  const weatherAgeS = wsData?.system?.weather_update_age_s ?? null;
 
   // Annotate assets with sensor-change metadata
   const annotatedAssets = useSensorStream(liveAssets);
@@ -251,6 +254,8 @@ export default function App() {
             connected={connected}
             reconnecting={reconnecting}
             lastUpdate={lastUpdate}
+            sensorAgeS={sensorAgeS}
+            weatherAgeS={weatherAgeS}
             isMock={isMock}
           />
 
@@ -391,15 +396,28 @@ export default function App() {
               <div className="panel">
                 <div className="panel__header">
                   <h2 className="panel__title">Dispatch plan</h2>
-                  <span className="panel__meta">{plan ? `${plan.length} steps` : '—'}</span>
+                  <span className="panel__meta">{plan?.plan ? `${plan.plan.length} steps` : '—'}</span>
                 </div>
                 <div className="panel__body">
                   {planLoading && <ListSkeleton />}
                   {!planLoading && planError && (
                     <div style={{ color: '#ef4444', fontSize: 12, padding: 8 }}>{planError}</div>
                   )}
-                  {!planLoading && !planError && plan && (
-                    <DispatchPlan plan={plan} assets={annotatedAssets} />
+                  {!planLoading && !planError && plan?.plan && (
+                    <>
+                      {plan.summary && (
+                        <div style={{
+                          background: '#0f2a1a', border: '1px solid #22c55e44',
+                          borderLeft: '3px solid #22c55e', borderRadius: 6,
+                          padding: '10px 14px', marginBottom: 12,
+                          fontSize: 13, color: '#86efac', lineHeight: 1.55,
+                        }}>
+                          <strong style={{ color: '#22c55e', marginRight: 6 }}>Bob:</strong>
+                          {plan.summary}
+                        </div>
+                      )}
+                      <DispatchPlan plan={plan.plan} assets={annotatedAssets} />
+                    </>
                   )}
                 </div>
               </div>

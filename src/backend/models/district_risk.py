@@ -14,7 +14,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from typing import Optional
 
-from .risk_engine import AssetRiskResult
+from .risk_engine import AssetRiskResult, _risk_level
 from ..data.weather_simulator import WeatherSnapshot
 
 
@@ -37,16 +37,6 @@ class DistrictRisk:
 
     def to_dict(self) -> dict:
         return asdict(self)
-
-
-def _risk_level(score: float) -> str:
-    if score <= 30:
-        return "low"
-    if score <= 60:
-        return "medium"
-    if score <= 80:
-        return "high"
-    return "critical"
 
 
 def compute_district_risks(

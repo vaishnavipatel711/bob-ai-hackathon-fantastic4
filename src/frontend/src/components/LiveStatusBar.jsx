@@ -1,5 +1,5 @@
 // LiveStatusBar.jsx — connection status bar shown at top of dashboard.
-// Shows live/reconnecting/offline state + timing of last data updates.
+// Shows live/reconnecting/offline state + per-cadence timing of last data updates.
 
 import React, { useState, useEffect } from 'react';
 
@@ -11,7 +11,24 @@ function timeAgo(date) {
   return `${Math.floor(secs / 60)}m ago`;
 }
 
-export default function LiveStatusBar({ connected, reconnecting, lastUpdate, isMock }) {
+function secsAgo(ageSeconds) {
+  if (ageSeconds == null) return '—';
+  const s = Math.round(ageSeconds);
+  if (s < 5) return 'just now';
+  if (s < 60) return `${s}s ago`;
+  return `${Math.floor(s / 60)}m ago`;
+}
+
+/**
+ * Props:
+ *   connected      {boolean}
+ *   reconnecting   {boolean}
+ *   lastUpdate     {Date|null}   — wall-clock time of the last WS frame
+ *   sensorAgeS     {number|null} — seconds since the sensor snapshot was taken
+ *   weatherAgeS    {number|null} — seconds since the weather snapshot was taken
+ *   isMock         {boolean}
+ */
+export default function LiveStatusBar({ connected, reconnecting, lastUpdate, sensorAgeS, weatherAgeS, isMock }) {
   const [tick, setTick] = useState(0);
 
   // Re-render every second to keep "Xs ago" fresh
@@ -35,7 +52,11 @@ export default function LiveStatusBar({ connected, reconnecting, lastUpdate, isM
     dotClass = 'live-bar__dot live-bar__dot--red';
   }
 
-  const ago = timeAgo(lastUpdate);
+  // Wall-clock fallback for when precise ages aren't available
+  const frameAgo = timeAgo(lastUpdate);
+  const sensorLabel  = sensorAgeS  != null ? secsAgo(sensorAgeS)  : frameAgo;
+  const weatherLabel = weatherAgeS != null ? secsAgo(weatherAgeS) : frameAgo;
+  const predLabel    = sensorAgeS  != null ? secsAgo(sensorAgeS)  : frameAgo;
 
   return (
     <div className="live-bar" style={{
@@ -61,13 +82,13 @@ export default function LiveStatusBar({ connected, reconnecting, lastUpdate, isM
         </span>
       </div>
 
-      {/* Timing details */}
+      {/* Timing details — each cadence shown separately */}
       <span style={{ color: 'var(--text-muted, #64748b)' }}>|</span>
-      <span>Last sensor: <strong style={{ color: '#e2e8f0' }}>{ago}</strong></span>
+      <span>Sensor (5s): <strong style={{ color: '#e2e8f0' }}>{sensorLabel}</strong></span>
       <span style={{ color: 'var(--text-muted, #64748b)' }}>|</span>
-      <span>Weather: <strong style={{ color: '#e2e8f0' }}>{ago}</strong></span>
+      <span>Weather (30s): <strong style={{ color: '#e2e8f0' }}>{weatherLabel}</strong></span>
       <span style={{ color: 'var(--text-muted, #64748b)' }}>|</span>
-      <span>Prediction: <strong style={{ color: '#e2e8f0' }}>{ago}</strong></span>
+      <span>Prediction: <strong style={{ color: '#e2e8f0' }}>{predLabel}</strong></span>
 
       {/* Demo mode badge */}
       {isMock && (

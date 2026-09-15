@@ -61,13 +61,9 @@ def generate_plan(ranked_assets: list, weather_forecast: dict = None) -> dict:
             "plan": [],
         }
 
-    # Keep the plan manageable for the demo.
-    # The /plan endpoint already sends the top N assets.
-    assets_for_plan = ranked_assets[:50]
-
     # First try IBM Bob.
     bob_result = _generate_plan_with_bob(
-        assets_for_plan,
+        ranked_assets,
         weather_forecast,
     )
 
@@ -76,7 +72,7 @@ def generate_plan(ranked_assets: list, weather_forecast: dict = None) -> dict:
 
     # If Bob fails or returns invalid JSON, use a reliable local fallback.
     return _generate_local_dispatch_plan(
-        assets_for_plan,
+        ranked_assets,
         weather_forecast,
     )
 

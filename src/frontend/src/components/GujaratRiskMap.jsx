@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { geoMercator, geoPath } from 'd3-geo';
 import gujaratDistricts from '../data/gujarat_districts.json';
 import {
@@ -160,22 +160,35 @@ export default function GujaratRiskMap({ assets, selectedAssetId, onSelectAsset,
     return m;
   }, [substationPx]);
 
+  // Tick every 10 s so "Xs ago" labels stay fresh without heavy re-renders
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 10000);
+    return () => clearInterval(id);
+  }, []);
+
   function riskFor(districtName) {
     return byDistrict.get(normalizeDistrictName(districtName));
   }
 
-  // Relative time label for alerts (static offsets based on risk score)
-  function alertTime(i) {
-    const offsets = ['1 hour ago', '2 hours ago', '4 hours ago', '6 hours ago'];
-    return offsets[i] || '1 hour ago';
+  // Real time-ago from alert timestamp (ISO string or Date)
+  function alertTimeAgo(alert) {
+    const ts = alert.timestamp ?? alert.created_at;
+    if (!ts) return '';
+    const secs = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
+    if (secs < 5)  return 'just now';
+    if (secs < 60) return `${secs}s ago`;
+    if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+    return `${Math.floor(secs / 3600)}h ago`;
   }
 
   const alertDetail = useCallback((alert, asset) => {
     if (!asset) return alert.detail;
     const w = asset.weather;
-    if (w?.condition) return `${w.condition} · ${alertTime(alerts.indexOf(alert))}`;
+    const timeStr = alertTimeAgo(alert);
+    if (w?.condition) return `${w.condition}${timeStr ? ' · ' + timeStr : ''}`;
     return alert.detail;
-  }, [alerts]);
+  }, []);
 
   return (
     <div className="gujaratmap-wrap">
@@ -403,7 +416,7 @@ export default function GujaratRiskMap({ assets, selectedAssetId, onSelectAsset,
           <ul className="gmap__alerts-list">
             {alerts.map((alert, i) => {
               const asset = gujaratAssets.find((a) => a.asset_id === alert.id);
-              const timeStr = alertTime(i);
+              const timeStr = alertTimeAgo(alert);
               return (
                 <li key={alert.id} className={`gmap__alert gmap__alert--${alert.severity}`}>
                   <span className="gmap__alert-icon">

@@ -42,9 +42,12 @@ RISK_WEIGHTS = {
 
 assert abs(sum(RISK_WEIGHTS.values()) - 1.0) < 1e-9, "RISK_WEIGHTS must sum to 1.0"
 
-# Minimum sub-score for a factor to be reported as "contributing".
-# Keeps contributing_factors focused on what actually matters, not noise.
-CONTRIBUTION_THRESHOLD = 0.15
+# Minimum *contribution* (weight × sub_score) for a factor to appear in
+# contributing_factors.  Guarding on sub_score alone would include a
+# low-weight factor (e.g. incident_history weight=0.10) whenever its
+# raw sub_score exceeds 0.15, even if its actual contribution to the total
+# risk score is only 0.015 — noise rather than signal.
+CONTRIBUTION_THRESHOLD = 0.03   # contribution = weight * sub_score
 
 HIGH_RISK_THRESHOLD = 0.70
 MEDIUM_RISK_THRESHOLD = 0.40
@@ -201,7 +204,7 @@ def compute_risk_score(
         sub_score, label = _FACTOR_SCORERS[factor_name](sensors, weather, incidents)
         contribution = round(weight * sub_score, 4)
         total += contribution
-        if sub_score >= CONTRIBUTION_THRESHOLD:
+        if contribution >= CONTRIBUTION_THRESHOLD:
             contributing_factors.append(
                 ContributingFactor(factor=factor_name, value=label, weight=round(contribution, 2))
             )

@@ -162,8 +162,14 @@ export default function AssetDetailPanel({ asset, onClose }) {
   const priority = priorityFromScore(score);
   const priorityColor = PRIORITY_COLORS[priority];
 
-  // Simulate load % from temperature (rough proxy for mock data)
-  const loadPct = Math.min(100, Math.round((s.temperature_c / 95) * 100));
+  // Use the real load_pct field when available (backend flat shape sends it
+  // directly on the asset; mock data has it nested under sensor).
+  // Only fall back to a temperature-derived estimate when neither is present.
+  const rawLoadPct =
+    asset.load_pct ??
+    s.load_pct ??
+    (s.temperature_c != null ? Math.min(100, Math.round((s.temperature_c / 95) * 100)) : null);
+  const loadPct = rawLoadPct != null ? rawLoadPct : 0;
   const oilQualityPct = s.oil_bdv_kv ? Math.min(100, Math.round((s.oil_bdv_kv / 80) * 100)) : null;
 
   return (
