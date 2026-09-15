@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MOCK_ASSETS } from '../mockData';
 
 const WS_URL = import.meta.env.VITE_API_BASE_URL
-  ? `ws://${new URL(import.meta.env.VITE_API_BASE_URL).host}/ws/live`
+  ? import.meta.env.VITE_API_BASE_URL.replace(/^http/, 'ws') + '/ws/live'
   : null;
 
 const REST_BASE = import.meta.env.VITE_API_BASE_URL || null;
