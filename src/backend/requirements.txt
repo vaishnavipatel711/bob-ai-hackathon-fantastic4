@@ -1,12 +1,6 @@
-fastapi
-uvicorn[standard]
-pydantic
-python-dotenv
-requests
-pandas
-numpy
-scikit-learn
-# add IBM Bob / watsonx SDK package here once confirmed
 fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2.0
+python-dotenv
+requests
+websockets>=12.0

@@ -65,7 +65,7 @@ export default function RiskPanel({ assets, selectedAssetId, onSelectAsset }) {
             <li
               key={asset.asset_id}
               className="riskpanel__row"
-              style={isSelected ? { background: 'var(--bg-2)' } : undefined}
+              style={isSelected ? { background: 'var(--bg-2)', borderLeft: `3px solid ${color}` } : { borderLeft: '3px solid transparent' }}
             >
               <button
                 type="button"
@@ -82,9 +82,9 @@ export default function RiskPanel({ assets, selectedAssetId, onSelectAsset }) {
                   </span>
                 </span>
 
-                <span className="riskpanel__stat">
-                  {asset.risk_score.toFixed(2)}
-                  <span className="riskpanel__stat-label">risk</span>
+                <span className="riskpanel__score-col">
+                  <span className="riskpanel__score-num" style={{ color }}>{asset.risk_score.toFixed(2)}</span>
+                  <span className="riskpanel__stat-label" style={{ color }}>{asset.risk_level}</span>
                   <span className="riskpanel__score-bar">
                     <span
                       className="riskpanel__score-fill"

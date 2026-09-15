@@ -1,129 +1,96 @@
-# Backend
+# Backend — Grid Risk & Outage Advisor API
 
-FastAPI service that:
-1. Generates/ingests sensor, weather, and incident data (`data/`)
-2. Scores equipment failure risk & ranks by grid impact (`models/`)
-3. Uses IBM Bob to explain risk and generate maintenance/dispatch plans (`bob_integration/`)
-4. Exposes it all via REST endpoints for the frontend (`api/`)
-
-## Setup
-```bash
-cd src/backend
-python -m venv venv
-source venv/bin/activate   # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-cp ../.env.example ../.env   # fill in real values
-uvicorn api.main:app --reload --port 8000
-```
-
-## Folder responsibilities
-| Folder | Owns |
-|---|---|
-| `data/` | Sensor data generator, weather client, incident history loader |
-| `models/` | Risk scoring model, failure predictor, impact ranking |
-| `bob_integration/` | Bob client, reasoning/explanation engine, maintenance plan generator |
-| `api/` | FastAPI app + routes tying it all together |
-
-# U1: Power Outage Prediction & Grid Equipment Failure Advisor
-Risk model + API layer (IBM Bob AI Hackathon)
-
-## What's here
+## Architecture
 
 ```
-src/backend/
-  models/
-    risk_scoring_model.py   # explainable weighted risk scorer (sensors + weather + incidents)
-    failure_predictor.py    # days-to-failure estimate from risk_score
-    impact_ranking.py       # ranks assets by grid impact (risk + customers + criticality)
-  data/
-    mock_data.py            # Day-1 hardcoded raw inputs, run through the real pipeline
-    asset_source.py         # <-- THE ONLY FILE TO EDIT ON DAY 2 (see below)
-  api/
-    main.py                 # FastAPI app, CORS enabled
-    routes.py                # /assets, /assets/{id}, /assets/{id}/explain, /plan, /ask
-    bob_integration.py      # proxy stub for teammate's Bob explain integration
+Real-time Sensor Simulator (5s cadence)
+         +
+Weather Simulator (30s cadence, 15 Gujarat districts)
+         +
+Historical Incident Data (per-asset synthetic history)
+         ↓
+Risk Engine (explainable weighted scoring)
+         ↓
+District Risk Aggregation
+         ↓
+Alert Engine (threshold + delta triggers)
+         ↓
+Crew Pre-positioning Planner
+         ↓
+FastAPI REST + WebSocket /ws/live
 ```
 
-## Run it
+## Quick Start
 
 ```bash
-pip install -r requirements.txt
+# From repo root
+pip install -r src/backend/requirements.txt
 uvicorn src.backend.api.main:app --reload --port 8000
 ```
 
-Swagger UI: http://localhost:8000/docs
+Then open: http://localhost:8000/docs
 
-## Endpoints
+## API Endpoints
 
-| Method | Path                     | Description |
-|--------|--------------------------|--------------|
-| GET    | `/assets`                | All assets, impact-ranked. Optional `?risk_level=high` filter. |
-| GET    | `/assets/{id}`           | Single asset, 404 if missing. |
-| GET    | `/assets/{id}/explain`   | Explanation text; tries Bob, falls back to local template. |
-| GET    | `/plan?top_n=5`          | Prioritized maintenance plan, ranked by impact not raw risk. |
-| POST   | `/ask`                   | `{"question": "...", "asset_id": "optional"}` -> free-text answer. |
+### Real-Time (new)
+| Method | Path | Description |
+|--------|------|-------------|
+| WS | `/ws/live` | Live updates every 5s: assets + alerts + district risks + weather |
+| GET | `/api/assets` | All 25 Gujarat assets with current risk scores |
+| GET | `/api/assets/{id}` | Single asset with full sensor + risk detail |
+| GET | `/api/assets/{id}/history` | Sensor history last 60 minutes |
+| GET | `/api/risk` | All risk scores sorted by severity |
+| GET | `/api/risk/{id}` | Single asset risk breakdown |
+| GET | `/api/districts/risk` | All 15 Gujarat district risks |
+| GET | `/api/alerts` | Active alerts (most recent first) |
+| GET | `/api/maintenance/priorities` | Ranked maintenance plan |
+| GET | `/api/crew/recommendations` | Crew pre-positioning plan |
+| GET | `/api/weather` | Current weather per district |
+| GET | `/api/system/health` | System status + data freshness |
 
-## Asset schema (do not rename fields — teammates depend on this shape)
+### Legacy (kept for compatibility)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/assets` | Impact-ranked asset list (static) |
+| GET | `/assets/{id}/explain` | Bob-generated risk explanation |
+| GET | `/plan` | Maintenance plan (Bob integration) |
+| POST | `/ask` | Free-text Q&A via Bob |
 
-```json
-{
-  "asset_id": "TX-104",
-  "location": {"lat": 22.56, "lon": 72.93, "name": "Anand Substation 4"},
-  "asset_type": "transformer",
-  "risk_score": 0.84,
-  "risk_level": "high",
-  "contributing_factors": [
-    {"factor": "oil_quality", "value": "degraded", "weight": 0.4},
-    {"factor": "vibration", "value": "above_threshold", "weight": 0.3},
-    {"factor": "weather_forecast", "value": "storm_72h", "weight": 0.3}
-  ],
-  "predicted_days_to_failure": 12,
-  "customers_affected_estimate": 4200
-}
-```
+## Risk Calculation
 
-`/assets` and `/plan` responses additionally attach an `impact` block
-(`impact_score`, `risk_component`, `customer_component`,
-`criticality_component`) — additive, doesn't touch the base schema.
+Risk score (0-100) is a **transparent, explainable weighted sum**:
 
-## Day 2: swapping in real data
+| Factor | Weight (transformer) | Weight (other) |
+|--------|---------------------|----------------|
+| Partial Discharge | 0.25 | 0.15 |
+| Load % | 0.20 | 0.25 |
+| Temperature | 0.15 | 0.15 |
+| Vibration | 0.15 | 0.20 |
+| Oil Quality | 0.15 | 0.10 |
+| Weather Risk | 0.10 | 0.15 |
+| Age/History | combined 0.10 | combined 0.10 |
 
-Edit **one line** in `src/backend/data/asset_source.py`:
+Risk levels: **0-30 = Low | 31-60 = Medium | 61-80 = High | 81-100 = Critical**
 
-```python
-# before
-from .mock_data import get_all_assets, get_asset_by_id
-# after
-from .teammate_data_pipeline import get_all_assets, get_asset_by_id
-```
+Every risk score comes with `contributing_factors` + `risk_explanation`.
 
-The teammate's module just needs to expose `get_all_assets() -> list[dict]`
-and `get_asset_by_id(id) -> dict | None` returning the schema above (or raw
-sensor/weather/incident objects that you then run through
-`models.risk_scoring_model.compute_risk_score` the same way `mock_data.py`
-does). Nothing in `models/` or `api/` needs to change.
+## Demo Mode
 
-Same pattern for Bob: edit the marked swap point inside
-`src/backend/api/bob_integration.py` once the real client exists.
+All data is clearly labelled: `"data_label": "DEMO DATA — Simulated real-time sensor stream"`
 
-## Design notes (for judges / explainability)
+The simulator:
+- Updates every **5 seconds** with realistic correlated variation
+- Always has **2 assets degrading** (15-minute escalation cycle)
+- Injects a **random anomaly spike** every 3–5 minutes (overheating / high vibration / partial discharge / overload)
+- Weather updates every **30 seconds** with gradual storm build-up
 
-- **risk_scoring_model.py** is a transparent weighted sum, not a black box.
-  `RISK_WEIGHTS` is a visible, documented constant; every contributing
-  factor in the output traces back to one weight × one sub-score.
-- **failure_predictor.py** is a commented heuristic on the same risk_score
-  and contributing_factors — no hidden second model.
-- **impact_ranking.py** deliberately separates *risk* from *impact*: a
-  high-risk low-customer-count pole is correctly deprioritized under a
-  lower-risk, high-customer-count substation. Component breakdown
-  (`risk_component`, `customer_component`, `criticality_component`) is
-  exposed so this can be explained the same way risk_score is.
+## Environment Variables
 
-## Tests
-
-`smoke_test.py` exercises every endpoint end-to-end and asserts the asset
-schema matches exactly. Run with:
+Copy `../.env.example` to `src/backend/.env`:
 
 ```bash
-python3 smoke_test.py
+IBM_BOB_API_KEY=       # optional — runs in mock mode without it
+IBM_BOB_ENDPOINT=
+WATSONX_PROJECT_ID=
+WEATHER_API_KEY=       # optional — simulator used if not set
 ```

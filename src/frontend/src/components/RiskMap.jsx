@@ -62,8 +62,11 @@ function separateOverlaps(points, minDist = 7, iterations = 40) {
     }
     if (!moved) break;
   }
-  const clamp = (v) => Math.min(Math.max(v, PADDING_PCT - 4), 100 - PADDING_PCT + 4);
-  return pts.map((p) => ({ ...p, xPct: clamp(p.xPct), yPct: clamp(p.yPct) }));
+  // Keep clear of the top/left edges (where labels render) and the bottom edge
+  // (where labels would otherwise get clipped by the SVG viewport).
+  const clampX = (v) => Math.min(Math.max(v, PADDING_PCT - 2), 100 - PADDING_PCT + 4);
+  const clampY = (v) => Math.min(Math.max(v, PADDING_PCT + 2), 100 - PADDING_PCT - 2);
+  return pts.map((p) => ({ ...p, xPct: clampX(p.xPct), yPct: clampY(p.yPct) }));
 }
 
 export default function RiskMap({ assets, selectedAssetId, onSelectAsset }) {
@@ -91,7 +94,7 @@ export default function RiskMap({ assets, selectedAssetId, onSelectAsset }) {
         role="img"
         aria-label="Grid asset risk map"
       >
-        {/* range reticle, purely atmospheric — grounds the panel as an instrument view */}
+        {/* range reticle — atmospheric grid-instrument framing, not a data encoding */}
         <g opacity="0.5">
           <circle cx="50" cy="50" r="42" fill="none" stroke="var(--hairline)" strokeWidth="0.15" />
           <circle cx="50" cy="50" r="28" fill="none" stroke="var(--hairline)" strokeWidth="0.15" />
@@ -120,9 +123,19 @@ export default function RiskMap({ assets, selectedAssetId, onSelectAsset }) {
                 <circle className="riskmap__marker-ring" r={r / 10 + 1.6} stroke={color} vectorEffect="non-scaling-stroke" />
               )}
               <circle className="riskmap__core" r={r / 10} fill={color} vectorEffect="non-scaling-stroke" />
-              <text className="riskmap__label" x={r / 10 + 1.4} y="1" vectorEffect="non-scaling-stroke">
-                {asset.asset_id}
-              </text>
+              {/* Labels stay hidden by default and only appear on hover/selection —
+                  showing every label at once causes overlap when assets cluster
+                  close together on the projected map. */}
+              {(isSelected || hoveredId === asset.asset_id) && (
+                <text
+                  className="riskmap__label"
+                  x={r / 10 + 1.4}
+                  y="1"
+                  vectorEffect="non-scaling-stroke"
+                >
+                  {asset.asset_id}
+                </text>
+              )}
             </g>
           );
         })}
@@ -154,6 +167,7 @@ export default function RiskMap({ assets, selectedAssetId, onSelectAsset }) {
         <span className="risk-badge risk-badge--high"><span className="risk-badge__dot" />high</span>
         <span className="risk-badge risk-badge--medium"><span className="risk-badge__dot" />medium</span>
         <span className="risk-badge risk-badge--low"><span className="risk-badge__dot" />low</span>
+        <div className="riskmap__legend-note">marker size = customers affected · rings are reticle only</div>
       </div>
     </div>
   );

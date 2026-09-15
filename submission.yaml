@@ -1,69 +1,75 @@
-# =============================================================================
-# HACKATHON SUBMISSION METADATA
-# =============================================================================
-# Instructions:
-#   - Fill in ALL required fields (marked with # REQUIRED)
-#   - Optional fields can be left as empty strings ""
-#   - Do NOT rename this file — the evaluation pipeline reads it by name
-#   - Use double quotes around all string values
-# =============================================================================
-
 team:
-  name: ""                             # REQUIRED — e.g., "Orion Squad"
-  track: ""                            # REQUIRED — one of: AI | DevOps | Sustainability | Open
+  name: "Fantastic 4"
+  track: "AI"
   lead:
-    name: ""                           # REQUIRED — e.g., "Alice Chen"
-    email: ""                          # REQUIRED — e.g., "alice.chen@ibm.com"
+    name: "Vaishnavi Patel"
+    email: "vaishnavipatel711@gmail.com"
   members:
-    - name: ""                         # REQUIRED — Team member 1
+    - name: "Vaishnavi Patel"
+      email: "vaishnavipatel711@gmail.com"
+    - name: "Team Member 2"
       email: ""
-    - name: ""                         # Add more members by copying the two lines above
-      email: ""
-    - name: ""
+    - name: "Team Member 3"
       email: ""
 
 submission:
-  title: ""                            # REQUIRED — Project display name, e.g., "SmartOps Dashboard"
+  title: "Power Outage Prediction & Grid Equipment Failure Advisor"
 
-  problem_statement: >                 # REQUIRED — 1-3 sentences. What problem? Who has it?
-    Replace this text with a concise description of the real-world problem
-    your project addresses and who experiences it.
+  problem_statement: >
+    Power transformer and substation failures cause blackouts costing utilities
+    $1M+/hour and affecting millions of people. Most utilities still use
+    calendar-based maintenance schedules, while sensors already measuring
+    temperature, vibration, partial discharge, and oil quality show failure
+    signatures weeks in advance. Weather events compound the risk — but sensor
+    data and weather forecasts are never combined in time to act.
 
-  solution_summary: >                  # REQUIRED — 1-3 sentences. What did you build?
-    Replace this text with a clear description of your solution
-    and how it addresses the problem above.
+  solution_summary: >
+    We built an IBM Bob-powered real-time grid equipment failure advisor that
+    combines live sensor telemetry from 25 Gujarat grid assets, district-level
+    weather forecasts, and historical incident records into an explainable
+    weighted risk score for every asset. IBM Bob (watsonx.ai Granite model)
+    generates a prioritised maintenance and crew pre-positioning dispatch plan,
+    ranks assets by grid impact severity (customers at risk × criticality ×
+    failure probability), and answers free-text operational questions from
+    control-room operators in plain language.
 
-  key_features:                        # REQUIRED — List 3 to 5 specific features you implemented
-    - ""                               # e.g., "Real-time pipeline anomaly detection using watsonx.ai"
-    - ""
-    - ""
-    - ""                               # optional 4th
-    - ""                               # optional 5th
+  key_features:
+    - "Real-time multi-signal risk scoring: 6-factor weighted model combining oil quality, vibration, temperature, load factor, weather forecast, and incident history — all weights named, documented, and sum-enforced"
+    - "IBM Bob (watsonx.ai ibm/granite-13b-instruct-v2) generates the prioritised maintenance and crew dispatch plan and explains each asset risk in plain language via the /ask and /plan endpoints"
+    - "Live WebSocket dashboard pushing sensor updates every 5 seconds for 25 Gujarat grid assets across 15 districts with anomaly injection (overheating, high vibration, partial discharge, overload)"
+    - "District-level risk aggregation, crew pre-positioning recommendations with geographic adjacency routing, and dynamic alert engine with threshold-crossing and rapid-increase detection"
+    - "Fully operational without live credentials — deterministic mock fallback keeps the entire pipeline running for demo reliability; switching to real IBM Bob requires only three environment variables"
 
   tech_stack:
-    languages: []                      # REQUIRED — e.g., ["Python", "TypeScript"]
-    frameworks: []                     # e.g., ["FastAPI", "React"]
-    ibm_technologies: []               # e.g., ["watsonx.ai", "IBM Bob", "IBM Cloud Functions"]
-    databases: []                      # e.g., ["PostgreSQL", "Redis"]
-    other: []                          # e.g., ["Docker", "GitHub Actions", "Slack API"]
+    languages: ["Python", "JavaScript", "CSS"]
+    frameworks: ["FastAPI", "React", "Vite"]
+    ibm_technologies: ["IBM Bob", "watsonx.ai", "ibm/granite-13b-instruct-v2"]
+    databases: []
+    other: ["Leaflet.js", "WebSocket", "uvicorn", "python-dotenv"]
 
-  what_we_are_most_proud_of: >         # Optional but recommended — guides judges to your best work
-    Replace with what aspect of the submission you consider strongest
-    and want judges to pay special attention to.
+  what_we_are_most_proud_of: >
+    The explainability layer: every risk score is a documented weighted sum of
+    named factors (not a black box), every contributing factor is surfaced to
+    the operator with its raw value and contribution weight, and IBM Bob
+    translates the machine score into plain-language reasoning a grid operations
+    manager can act on immediately. The full pipeline — 25 live assets, weather
+    simulation across 15 districts, alert engine, crew planner, and Bob-powered
+    dispatch plan — runs end-to-end without any external dependencies, making
+    the demo completely reliable.
 
-  known_limitations: >                 # Optional but recommended — be honest about gaps
-    Replace with any known limitations, incomplete features,
-    or shortcuts taken due to time constraints.
+  known_limitations: >
+    Sensor and weather data are synthetically simulated for the demo rather
+    than pulled from live SCADA/IoT feeds or a real weather API; the pipeline
+    is structured for a real data source to be swapped in without changing any
+    model or API layer. IBM Bob integration runs in a local mock-reasoning mode
+    by default when credentials are not set, switching automatically to real
+    watsonx.ai calls when IBM_BOB_API_KEY and WATSONX_PROJECT_ID are provided.
 
-# =============================================================================
-# ARTIFACT LOCATIONS
-# These paths are relative to the repo root. Only change if you moved files.
-# =============================================================================
 artifacts:
   source_code: "src/"
   setup_guide: "docs/setup-guide.md"
   architecture_doc: "docs/architecture.md"
-  demo_video: "demo/demo-video-link.txt"   # URL to hosted video (YouTube, Loom, Box)
-  live_demo: "demo/live-demo-url.txt"      # URL to deployed demo (optional)
+  demo_video: "demo/demo-video-link.txt"
+  live_demo: "demo/live-demo-url.txt"
   screenshots: "demo/screenshots/"
   presentation: "presentation/"

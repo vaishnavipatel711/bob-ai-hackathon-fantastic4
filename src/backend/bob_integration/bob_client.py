@@ -9,6 +9,11 @@ and generates rule-based reasoning text from the context you pass in.
 This means the rest of your code (reasoning_engine.py, maintenance_plan_generator.py)
 works end-to-end RIGHT NOW without needing real API access — swap in real
 credentials later and nothing else changes.
+
+IBM BOB MODEL:
+ibm/granite-13b-instruct-v2 via the watsonx.ai text generation endpoint.
+Endpoint format: https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29
+Project ID: set via WATSONX_PROJECT_ID environment variable.
 """
 
 import os
@@ -19,11 +24,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 IBM_BOB_API_KEY = os.getenv("IBM_BOB_API_KEY", "")
-IBM_BOB_ENDPOINT = os.getenv("IBM_BOB_ENDPOINT", "")
+IBM_BOB_ENDPOINT = os.getenv(
+    "IBM_BOB_ENDPOINT",
+    "https://us-south.ml.cloud.ibm.com/ml/v1/text/generation?version=2023-05-29",
+)
 WATSONX_PROJECT_ID = os.getenv("WATSONX_PROJECT_ID", "")
+WATSONX_MODEL_ID = os.getenv("WATSONX_MODEL_ID", "ibm/granite-13b-instruct-v2")
 
 # If any real credential is missing, we run in MOCK MODE automatically.
-MOCK_MODE = not (IBM_BOB_API_KEY and IBM_BOB_ENDPOINT and WATSONX_PROJECT_ID)
+MOCK_MODE = not (IBM_BOB_API_KEY and WATSONX_PROJECT_ID)
 
 
 def ask_bob(prompt: str, context: dict = None) -> str:
@@ -33,6 +42,9 @@ def ask_bob(prompt: str, context: dict = None) -> str:
 
     In MOCK_MODE, generates a plausible rule-based response instead of
     calling a real API, so the whole pipeline runs without credentials.
+
+    Uses the watsonx.ai text generation REST API with ibm/granite-13b-instruct-v2.
+    max_new_tokens is set to 2000 to accommodate full JSON dispatch plan responses.
     """
     context = context or {}
 
@@ -45,22 +57,38 @@ def ask_bob(prompt: str, context: dict = None) -> str:
             headers={
                 "Authorization": f"Bearer {IBM_BOB_API_KEY}",
                 "Content-Type": "application/json",
+                "Accept": "application/json",
             },
             json={
+                "model_id": WATSONX_MODEL_ID,
                 "project_id": WATSONX_PROJECT_ID,
                 "input": prompt,
                 "parameters": {
                     "decoding_method": "greedy",
-                    "max_new_tokens": 300,
+                    "max_new_tokens": 2000,
+                    "min_new_tokens": 1,
                     "temperature": 0.3,
+                    "repetition_penalty": 1.05,
                 },
             },
-            timeout=15,
+            timeout=60,
         )
         response.raise_for_status()
         data = response.json()
-        # NOTE: adjust this line if the real watsonx response shape differs
-        return data.get("results", [{}])[0].get("generated_text", "").strip()
+
+        # Handle both watsonx.ai REST shape and IBM Bob chat shape:
+        #   watsonx REST:  {"results": [{"generated_text": "..."}]}
+        #   IBM Bob chat:  {"output": "..."} or {"message": {"content": [{"text": "..."}]}}
+        if "results" in data:
+            return data["results"][0].get("generated_text", "").strip()
+        if "output" in data:
+            return str(data["output"]).strip()
+        if "message" in data:
+            content = data["message"].get("content", [])
+            if content and isinstance(content, list):
+                return content[0].get("text", "").strip()
+        # Last resort: return full response as string so nothing is silently lost
+        return str(data).strip()
 
     except Exception as e:
         print(f"[bob_client] Real API call failed, falling back to mock: {e}")
